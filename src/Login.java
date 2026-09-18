@@ -27,7 +27,7 @@ public class Login {
     private String password;
     private String cellPhoneNumber;
     private String firstName;
-    private String lastName;
+    private String lastNae;
 
     private static final Pattern SA_CELL_PATTERN = Pattern.compile("^\\+27\\d{9}$");
 
