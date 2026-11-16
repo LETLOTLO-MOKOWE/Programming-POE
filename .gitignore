@@ -1,0 +1,6 @@
+target/
+storedMessages.json
+.idea/
+.vscode/
+*.iml
+nbproject/private/
