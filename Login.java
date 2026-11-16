@@ -2,6 +2,7 @@ package za.co.quickchat;
 
 import java.util.regex.Pattern;
 
+
 public class Login {
 
     private static final Pattern SA_CELL_SHAPE = Pattern.compile("^\\+27\\d{9}$");

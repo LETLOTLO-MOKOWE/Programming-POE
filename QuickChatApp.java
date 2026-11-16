@@ -1,13 +1,17 @@
 package za.co.quickchat;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.util.List;
 import java.util.Scanner;
+
 
 public class QuickChatApp {
 
     private static final int MENU_SEND = 1;
     private static final int MENU_RECENT = 2;
     private static final int MENU_QUIT = 3;
+    private static final int MENU_STORED = 4;
     private static final int LOGIN_ATTEMPT_CEILING = 3;
 
     private final Scanner keyboardFeed;
@@ -32,7 +36,9 @@ public class QuickChatApp {
                 screenOut.println("Too many failed login attempts. Exiting QuickChat.");
                 return;
             }
+            restoreStoredArray();
             screenOut.println("Welcome to QuickChat.");
+            quotaOfMessages = askWholeNumber("How many messages do you wish to enter? ", 1, Integer.MAX_VALUE);
             menuLoop();
         } catch (IllegalStateException inputClosed) {
             screenOut.println();
@@ -79,13 +85,14 @@ public class QuickChatApp {
             boolean attemptPassed = gatekeeper.loginUser(handle, secret);
             screenOut.println(gatekeeper.returnLoginStatus());
             if (attemptPassed) {
+                Message.setActiveSender(handle);
                 return true;
             }
         }
         return false;
     }
 
-    // menu
+    //  menu
 
     private void menuLoop() {
         boolean keepRunning = true;
@@ -94,18 +101,22 @@ public class QuickChatApp {
             screenOut.println("1) Send Messages");
             screenOut.println("2) Show recently sent messages");
             screenOut.println("3) Quit");
-            int menuPick = askWholeNumber("Choose an option: ", 1, 3);
-          
-             switch (menuPick) {
+            screenOut.println("4) Stored Messages");
+            int menuPick = askWholeNumber("Choose an option: ", 1, 4);
+
+            switch (menuPick) {
                 case MENU_SEND:
-                    quotaOfMessages = askWholeNumber("How many messages do you wish to enter? ", 1, Integer.MAX_VALUE);
-                 break;
+                    sendBatch();
+                    break;
                 case MENU_RECENT:
                     screenOut.println("Coming Soon.");
                     break;
                 case MENU_QUIT:
                     screenOut.println("Goodbye.");
                     keepRunning = false;
+                    break;
+                case MENU_STORED:
+                    storedMessagesMenu();
                     break;
                 default:
                     break;
@@ -178,7 +189,69 @@ public class QuickChatApp {
         }
     }
 
-    // ------------------------------------------------------------ input helpers
+    // stored messages 
+
+   
+    private void restoreStoredArray() {
+        try {
+            Message.loadStoredMessages();
+        } catch (IOException problem) {
+            screenOut.println("Could not read the stored messages file: " + problem.getMessage());
+        }
+    }
+
+    private void storedMessagesMenu() {
+        boolean stayInSubMenu = true;
+        while (stayInSubMenu) {
+            screenOut.println();
+            screenOut.println("--- Stored Messages ---");
+            screenOut.println("1) Display the sender and recipient of all stored messages");
+            screenOut.println("2) Display the longest stored message");
+            screenOut.println("3) Search for a message ID");
+            screenOut.println("4) Search for all messages stored for a recipient");
+            screenOut.println("5) Delete a message using its message hash");
+            screenOut.println("6) Display a report of all stored messages");
+            screenOut.println("7) Back to the main menu");
+            int storedPick = askWholeNumber("Choose an option: ", 1, 7);
+
+            switch (storedPick) {
+                case 1:
+                    printEachLine(Message.storedSenderAndRecipientLines(), "There are no stored messages.");
+                    break;
+                case 2:
+                    screenOut.println(Message.longestStoredMessage());
+                    break;
+                case 3:
+                    screenOut.println(Message.searchByMessageId(askLine("Enter the message ID: ")));
+                    break;
+                case 4:
+                    printEachLine(Message.storedMessagesForRecipient(askLine("Enter the recipient's cell number: ")),
+                            "No stored messages found for that recipient.");
+                    break;
+                case 5:
+                    screenOut.println(Message.deleteStoredMessageByHash(askLine("Enter the message hash: ")));
+                    break;
+                case 6:
+                    screenOut.println(Message.displayStoredReport());
+                    break;
+                default:
+                    stayInSubMenu = false;
+                    break;
+            }
+        }
+    }
+
+    private void printEachLine(List<String> linesToShow, String emptyNote) {
+        if (linesToShow.isEmpty()) {
+            screenOut.println(emptyNote);
+            return;
+        }
+        for (String lineToShow : linesToShow) {
+            screenOut.println(lineToShow);
+        }
+    }
+
+    // input helpers
 
     private String askLine(String promptText) {
         screenOut.print(promptText);
